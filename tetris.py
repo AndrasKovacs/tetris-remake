@@ -18,6 +18,7 @@ def help_color_rect_foreground(con, a, b, c, d, color):
 
 lt.console_set_custom_font(os.path.join('data', 'fonts','terminal16x16_gs_ro.png'), lt.FONT_TYPE_GREYSCALE | lt.FONT_LAYOUT_ASCII_INROW)
 lt.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'KuttaTetris', fullscreen=False)
+
 lt.sys_set_fps(FPS_LIMIT)
 
 playfield_bg = lt.console_new(FIELD_WIDTH, FIELD_HEIGHT)
@@ -113,15 +114,32 @@ class O(object):
 #(4, 5, 6, 8, 10, 12, 15, 19, 24, 30)
 #(30, 24, 19, 15, 12, 10, 8, 6, 5, 4)
 
-SPEED = 30
+MOVE_SPEED = 15
 
 
 def drop_piece():
+	piece = O
+
+
+	global pos
+	pos = piece.initpos[:]
+	  # to be extended
 
 	def handle_keys():
+		global pos
 		key = lt.console_check_for_keypress(True)
 		if key.vk == lt.KEY_ESCAPE:
 			return "exit"
+
+		if lt.console_is_key_pressed(lt.KEY_LEFT):
+			npos = tuple((w-1, h) for w, h in pos)
+			if not any(is_blocked[x][y] for x, y in npos):
+				pos = npos
+		elif lt.console_is_key_pressed(lt.KEY_RIGHT):
+			npos = tuple((w+1, h) for w, h in pos)
+			if not any(is_blocked[x][y] for x, y in npos):
+				pos = npos
+
 		lt.console_blit(playfield_bg, 0, 0, FIELD_WIDTH, FIELD_HEIGHT, playfield, 0, 0)
 
 		lt.console_set_default_foreground(playfield, piece.color)
@@ -137,9 +155,6 @@ def drop_piece():
 		lt.console_blit(playfield, 0, 0, FIELD_WIDTH, FIELD_HEIGHT, 0, 14, 1)
 		lt.console_flush()
 
-	piece = O  # to be extended
-	pos = piece.initpos
-	
 
 	if any(is_blocked[x][y] for x, y in pos):
 		return "fail"
@@ -148,11 +163,11 @@ def drop_piece():
 	for i in xrange(FPS_LIMIT/4):
 		if handle_keys() == "exit": return "exit"
 
-	count = SPEED
+	move_count = MOVE_SPEED
 	while True:
-		count -= 1
-		if not count:
-			count = SPEED
+		move_count -= 1
+		if not move_count:
+			move_count = MOVE_SPEED
 			npos = tuple((x, y+1) for x, y in pos)
 			if any(is_blocked[x][y] for x, y in npos):
 				for x, y in pos:
