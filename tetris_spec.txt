@@ -1,0 +1,58 @@
+Original Tetris
+
+
+Field:
+
+	height: 20
+	width:  10
+	5 vertical guiding lines of dots, spaced apart by 2 cells
+
+
+Mechanics:
+
+	levels:
+		1st level: ~ 0.5 sec per cell speed
+		max : 9th level: 0,07 sec per cell speed
+
+
+	rotation:
+
+		only one rotation button
+
+		O has no rotation
+		S and Z cycle between two configurations, where no cell is ever pushed below the lowest cell
+		L and J rotate around center cell
+		I cycles between two configurations, where two cells are pushed below the horizontal configuration
+
+		time does not stop when moving and rotating
+		floor and wall block rotation
+
+
+	scoring: 
+
+		Drop:
+			19 minus the number of active rows fallen. Hard dropping causes a piece to become inactive at the point of execution, therefore hard dropped rows are not deducted. If a piece were hard dropped from row 15 to any point below, the drop points rewarded would be 19 - (20 - 15). There is no additional bonus for hard dropping.
+		Level bonus:
+			n*3 per drop
+		No show next bonus:
+			5 
+
+
+	drop:
+		teleports piece to surface
+		piece can be moved before next move step after dropped
+
+
+	wait at top:
+		regardless of speed, pieces wait about 0,5 sec after appearing at the top
+
+
+	line clearing:
+		no gravity, pieces may float after clearing
+
+	
+
+
+
+
+
