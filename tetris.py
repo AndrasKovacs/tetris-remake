@@ -1,10 +1,15 @@
 
 import libtcodpy as lt 
 import os
-import itertools
 import random
 
-FPS_LIMIT = 60
+
+
+
+
+
+
+FPS_LIMIT = 60 #level speeds are calibrated to 60 fps!
 SCREEN_WIDTH = 40
 SCREEN_HEIGHT = 25
 FIELD_WIDTH = 12
@@ -99,8 +104,6 @@ for i,color in zip(xrange(5, 20, 2), stat_colors):
 
 ################# playfield mechanics ###########################
 
-# is_blocked = [[True] +[False]*(FIELD_WIDTH-2) + [True] for i in xrange(FIELD_HEIGHT-1)] + [[True] * FIELD_WIDTH]
-
 
 is_blocked = [[True]*FIELD_HEIGHT] + [[False]*(FIELD_HEIGHT-1) + [True] for i in xrange(FIELD_WIDTH-2)] + [[True]*FIELD_HEIGHT]
 cell_color = [[False] * FIELD_HEIGHT for i in xrange(FIELD_WIDTH)]
@@ -109,17 +112,54 @@ cell_color = [[False] * FIELD_HEIGHT for i in xrange(FIELD_WIDTH)]
 class O(object):
 	initpos 	= ((5, 0), (6, 0), (5, 1), (6, 1))
 	color  	 	= lt.blue
-	rotations 	= itertools.cycle([(0, 0), (0, 0), (0, 0), (0, 0)])
+	rotations 	= [((0, 0), (0, 0), (0, 0), (0, 0))]
+
+class I(object):
+	initpos 	= ((4, 0), (5, 0), (6, 0), (7, 0))
+	color  	 	= lt.red
+	rotations 	= [(( 2, -1), ( 1, 0), (0,  1), (-1,  2)), 
+				   ((-2,  1), (-1, 0), (0, -1), ( 1, -2))]
+
+class T(object):
+	initpos 	= ((5, 0), (6, 0), (7, 0), (6, 1))
+	color  	 	= lt.orange
+	rotations 	=  [(( 1, 1), (0, 0), (-1, -1), ( 1, -1)),
+					(( 1,-1), (0, 0), (-1,  1), (-1, -1)),
+					((-1,-1), (0, 0), ( 1,  1), ( -1, 1)),
+					((-1, 1), (0, 0), ( 1, -1), ( 1,  1))]
 
 class L(object):
-	initpos 	= ((5, 0), (6, 0), (5, 1), (6, 1))
-	color  	 	= lt.blue
-	rotations 	= itertools.cycle([(0, 0), (0, 0), (0, 0), (0, 0)])
+	initpos 	= ((5, 0), (6, 0), (7, 0), (5, 1))
+	color  	 	= lt.purple
+	rotations 	=  [(( 1, 1), (0, 0), (-1, -1), ( 2,  0)),
+					(( 1,-1), (0, 0), (-1,  1), ( 0, -2)),
+					((-1,-1), (0, 0), ( 1,  1), (-2,  0)),
+					((-1, 1), (0, 0), ( 1, -1), ( 0,  2))]
+		
+class J(object):
+	initpos 	= ((5, 0), (6, 0), (7, 0), (7, 1))
+	color  	 	= lt.silver
+	rotations 	=  [(( 1, 1), (0, 0), (-1, -1), ( 0, -2)),
+					(( 1,-1), (0, 0), (-1,  1), (-2,  0)),
+					((-1,-1), (0, 0), ( 1,  1), ( 0,  2)),
+					((-1, 1), (0, 0), ( 1, -1), ( 2,  0))]
+
+class S(object):
+	initpos 	= ((5, 1), (6, 1), (6, 0), (7, 0))
+	color  	 	= lt.green
+	rotations 	=  [(( 2,  0), ( 1, -1), (0, 0), ( -1, -1)),
+					((-2,  0), (-1,  1), (0, 0), (  1,  1))]
+
+class Z(object):
+	initpos 	= ((5, 0), (6, 0), (6, 1), (7, 1))
+	color  	 	= lt.cyan
+	rotations 	=  [(( 1,  1), (0, 0), ( 1, -1), (0, -2)),
+					((-1, -1), (0, 0), (-1,  1), (0,  2))]
+
+	
 
 
 
-
-#(4, 5, 6, 8, 10, 12, 15, 19, 24, 30)
 #(30, 24, 19, 15, 12, 10, 8, 6, 5, 4)
 
 MOVE_SPEED = 30
@@ -127,17 +167,20 @@ MOVE_SPEED = 30
 
 
 
-def drop_piece(piece=O):
+def drop_piece(piece):
 
-	global pos
+	global pos, rotation_state
+
+	rotation_state = 0
 	pos = piece.initpos[:]
-	  # to be extended
+
 
 	def handle_keys():
-		global pos, move_count
+		global pos, move_count, rotation_state
 
 		# handle keys
-		key = lt.console_check_for_keypress(True)
+
+		key = lt.console_check_for_keypress(True) # exit
 		if key.vk == lt.KEY_ESCAPE:
 			return "exit"
 
@@ -154,9 +197,18 @@ def drop_piece(piece=O):
 		elif key.vk == lt.KEY_SPACE: # drop
 			while not any(is_blocked[x][y+1] for x, y in pos):
 				pos = tuple((w, h+1) for w, h in pos)
-			move_count = 1 # hard drop
+			move_count = 1 # makes moving after drop impossible
+
+		elif key.vk == lt.KEY_UP: # rotate
+			npos = tuple((w + dw, h + dh) for (w, h), (dw, dh) in zip(pos, piece.rotations[rotation_state]))
+			if not any(is_blocked[x][y] for x, y in npos):
+				pos = npos
+				rotation_state += 1
+				if rotation_state == len(piece.rotations):
+					rotation_state = 0
 
 		#render
+
 		lt.console_blit(playfield_bg, 0, 0, FIELD_WIDTH, FIELD_HEIGHT, playfield, 0, 0)
 
 		lt.console_set_default_foreground(playfield, piece.color)
@@ -185,9 +237,9 @@ def drop_piece(piece=O):
 
 	
 	if any(is_blocked[x][y] for x, y in pos):
-		return "fail"
+		return "fail"  #game is over if initial position is already filled
 
-	#wait quarter sec at top
+	#wait quarter sec at top regardless of speed (seems to be the case in Tetris 3.12)
 	for i in xrange(FPS_LIMIT/4):
 		if handle_keys() == "exit": return "exit"
 
@@ -210,16 +262,24 @@ def drop_piece(piece=O):
 		if handle_keys() == "exit": return "exit"
 
 
+
+curr_piece = random.choice((O, I, T, L, J, S, Z))
 while True:
 
-	action = drop_piece()
-	print action
+	next_piece = random.choice((O, I, T, L, J, S, Z))
+	action = drop_piece(curr_piece)
 	if action == "exit":
 		break
 	elif action == "fail":
 		break
 	elif action == "newdrop":
-		continue
+		pass
+
+	curr_piece = next_piece 
+
+
+
+
 
 
 
