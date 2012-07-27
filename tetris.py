@@ -2,6 +2,7 @@
 import libtcodpy as lt 
 import os
 import itertools
+import random
 
 FPS_LIMIT = 60
 SCREEN_WIDTH = 40
@@ -108,38 +109,54 @@ cell_color = [[False] * FIELD_HEIGHT for i in xrange(FIELD_WIDTH)]
 class O(object):
 	initpos 	= ((5, 0), (6, 0), (5, 1), (6, 1))
 	color  	 	= lt.blue
-	rotations 	= itertools.cycle([[0, 0], [0, 0], [0, 0], [0, 0]])
+	rotations 	= itertools.cycle([(0, 0), (0, 0), (0, 0), (0, 0)])
+
+class L(object):
+	initpos 	= ((5, 0), (6, 0), (5, 1), (6, 1))
+	color  	 	= lt.blue
+	rotations 	= itertools.cycle([(0, 0), (0, 0), (0, 0), (0, 0)])
+
+
 
 
 #(4, 5, 6, 8, 10, 12, 15, 19, 24, 30)
 #(30, 24, 19, 15, 12, 10, 8, 6, 5, 4)
 
-MOVE_SPEED = 15
+MOVE_SPEED = 30
 
 
-def drop_piece():
-	piece = O
 
+
+def drop_piece(piece=O):
 
 	global pos
 	pos = piece.initpos[:]
 	  # to be extended
 
 	def handle_keys():
-		global pos
+		global pos, move_count
+
+		# handle keys
 		key = lt.console_check_for_keypress(True)
 		if key.vk == lt.KEY_ESCAPE:
 			return "exit"
 
-		if lt.console_is_key_pressed(lt.KEY_LEFT):
+		elif key.vk == lt.KEY_LEFT:  #move left
 			npos = tuple((w-1, h) for w, h in pos)
 			if not any(is_blocked[x][y] for x, y in npos):
 				pos = npos
-		elif lt.console_is_key_pressed(lt.KEY_RIGHT):
+
+		elif key.vk == lt.KEY_RIGHT: # move right
 			npos = tuple((w+1, h) for w, h in pos)
 			if not any(is_blocked[x][y] for x, y in npos):
 				pos = npos
 
+		elif key.vk == lt.KEY_SPACE: # drop
+			while not any(is_blocked[x][y+1] for x, y in pos):
+				pos = tuple((w, h+1) for w, h in pos)
+			move_count = 1 # hard drop
+
+		#render
 		lt.console_blit(playfield_bg, 0, 0, FIELD_WIDTH, FIELD_HEIGHT, playfield, 0, 0)
 
 		lt.console_set_default_foreground(playfield, piece.color)
@@ -155,7 +172,18 @@ def drop_piece():
 		lt.console_blit(playfield, 0, 0, FIELD_WIDTH, FIELD_HEIGHT, 0, 14, 1)
 		lt.console_flush()
 
+	def update_lines():
+		for h in xrange(FIELD_HEIGHT-1):
+			if all(is_blocked[w][h] for w in xrange(1, FIELD_WIDTH-1)):
+				for w in xrange(1, FIELD_WIDTH-1):
+					is_blocked[w][h] = False
+					cell_color[w][h] = False
+				for hn in reversed(xrange(h)):
+					for wn in xrange(1, FIELD_WIDTH-1):
+						is_blocked[wn][hn], is_blocked[wn][hn+1] =  is_blocked[wn][hn+1], is_blocked[wn][hn]
+						cell_color[wn][hn], cell_color[wn][hn+1] =  cell_color[wn][hn+1], cell_color[wn][hn]
 
+	
 	if any(is_blocked[x][y] for x, y in pos):
 		return "fail"
 
@@ -163,6 +191,7 @@ def drop_piece():
 	for i in xrange(FPS_LIMIT/4):
 		if handle_keys() == "exit": return "exit"
 
+	global move_count
 	move_count = MOVE_SPEED
 	while True:
 		move_count -= 1
@@ -173,6 +202,7 @@ def drop_piece():
 				for x, y in pos:
 					is_blocked[x][y] = True
 					cell_color[x][y] = piece.color
+				update_lines()
 				return "newdrop"
 			else:
 				pos = npos

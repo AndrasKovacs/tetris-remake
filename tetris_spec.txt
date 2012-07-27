@@ -3,9 +3,9 @@ Original Tetris
 
 Field:
 
-	height: 20
-	width:  10
-	5 vertical guiding lines of dots, spaced apart by 2 cells
+	height: 20 
+	width:  10 
+	5 vertical guiding lines of dots, spaced apart by 2 cells 
 
 
 Mechanics:
@@ -44,7 +44,7 @@ Mechanics:
 
 
 	wait at top:
-		regardless of speed, pieces wait about 0,5 sec after appearing at the top
+		regardless of speed, pieces wait about 0,25 sec after appearing at the top  - COMPLETED
 
 
 	line clearing:
