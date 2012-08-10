@@ -3,10 +3,11 @@ import libtcodpy as lt
 import os
 import time
 import random
+from itertools import cycle
 
 
 #TODO
-	# Main menu: starting difficulty, manual difficulty, progressive difficulty
+	# How to do caps in textinput?
 
 
 
@@ -255,6 +256,7 @@ Score
 		help_color_rect_foreground(playfield_bg, 1, 0, FIELD_WIDTH-2, FIELD_HEIGHT-1, lt.blue)
 
 	def render_all():
+		lt.console_clear(0)
 		render_panels()
 		render_piece_stats()
 		render_level()
@@ -409,17 +411,21 @@ Score
 		name = get_textinput(0, SCREEN_HEIGHT-1, "Enter name: ", FPS_LIMIT, chr(220), 0.33, lt.red, name_length, forbidden = (','))
 
 		try:
-			f = open("high_scores.txt", "a+") 
+			f = open("high_scores.txt") 
 			hiscores = [tuple(line.rstrip().split(",")) for line in f]
-			f.write(",".join((name, str(level), str(score))) + "\n")
+			f.close()
 		except IOError:
-			f = open("high_scores.txt", "w")
 			hiscores = []
 
-		hiscores.append((name, level, score))
-		hiscores = enumerate(sorted(hiscores, key = lambda x: int(x[2]), reverse=True)[:10], start=1)
-		hiscores =  "\n".join(str(i).rjust(2) + "." + name.ljust(name_length+1) + str(level).ljust(7) + str(score).ljust(5) 
-							      for (i, (name, level, score)) in hiscores)
+		hiscores.append((name, str(level), str(score)))
+		hiscores = sorted(hiscores, key = lambda x: int(x[2]), reverse=True)[:10]
+
+		f = open("high_scores.txt", "w")
+		f.write("\n".join(",".join(x) for x in hiscores))
+		f.close()
+
+		hiscores =  "\n".join(str(i).rjust(2) + "." + name.ljust(name_length+1) + level.ljust(7) + score.ljust(5) 
+							      for (i, (name, level, score)) in enumerate(hiscores, start=1))
 
 		lt.console_clear(0)
 		help_color_print(0, 14, 3, "HIGH SCORES", lt.red)
@@ -434,6 +440,29 @@ Score
 			elif action in ("n", "N"):
 				return "exit"
 
+
+	def start_menu():
+		start_text = """
+ xxxxx  xxxx  xxxxx  xxx   x   xxx
+   x    x       x    x  x  x  x
+   x    xxx     x    x  x  x   xxx
+   x    x       x    x x   x      x
+   x    xxxx    x    x  x  x   xxx
+
+
+
+
+******** Press ENTER to play *******""".replace('x', chr(219))
+		lt.console_clear(0)
+		lt.console_print(0, 2, 5, start_text)
+		for color in cycle(lt.color_gen_map([lt.red, lt.green, lt.blue, lt.yellow, lt.red], [0, 50, 100, 150, 200])):
+			if lt.console_check_for_keypress(True).vk == lt.KEY_ENTER: break
+			help_color_rect_foreground(0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, color)
+			lt.console_flush()
+
+
+
+	start_menu()
 	render_all()
 	action = "newdrop"
 
@@ -472,6 +501,8 @@ Score
 			next_piece = random.choice((L, I, T, S, Z, O, J))
 			render_next()
 			lt.console_flush()
+
+
 
 
 game_session()
